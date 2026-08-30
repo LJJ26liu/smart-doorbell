@@ -1,0 +1,9 @@
+{
+  "name": "doorbell-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "tablestore": "^4.2.0",
+    "ali-oss": "^6.20.0"
+  }
+}

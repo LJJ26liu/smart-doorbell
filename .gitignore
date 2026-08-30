@@ -1,0 +1,20 @@
+# 编译产物
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+*.bin
+*.elf
+*.map
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# 系统文件
+.DS_Store
+Thumbs.db

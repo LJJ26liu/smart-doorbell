@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📸 门铃照片墙</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            padding: 16px;
+            padding-bottom: 10px;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-height: 0;
+        }
+        /* ===== 认证界面 ===== */
+        #authContainer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        #authContainer h1 {
+            font-size: 28px;
+            color: #4fc3f7;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .auth-box {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 30px 24px;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid #2a2a3e;
+        }
+        .auth-box h2 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+        .auth-box input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .auth-box input:focus {
+            border-color: #4fc3f7;
+        }
+        .auth-box button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: #4fc3f7;
+            color: #000;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .auth-box button:hover {
+            background: #80d8ff;
+        }
+        .auth-box button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .auth-box .switch-link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #888;
+        }
+        .auth-box .switch-link a {
+            color: #4fc3f7;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .auth-box .switch-link a:hover {
+            text-decoration: underline;
+        }
+        .auth-box .error-msg {
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 12px;
+            min-height: 20px;
+        }
+        .auth-box .success-msg {
+            color: #51cf66;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 12px;
+            min-height: 20px;
+        }
+        .device-hint {
+            font-size: 13px;
+            color: #888;
+            margin-top: -8px;
+            margin-bottom: 14px;
+            padding-left: 4px;
+        }
+        .device-hint code {
+            background: #0a0a0a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #4fc3f7;
+            font-size: 13px;
+        }
+
+        /* ===== 照片墙 ===== */
+        #photoApp {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        #photoApp .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            margin-bottom: 4px;
+        }
+        #photoApp .header-row h1 {
+            font-size: 22px;
+            color: #4fc3f7;
+            margin: 0;
+        }
+        #photoApp .header-row .logout-btn {
+            padding: 6px 16px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background: transparent;
+            color: #aaa;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #photoApp .header-row .logout-btn:hover {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+        .filter-bar input[type="date"] {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+        }
+        .filter-bar select {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+        }
+        .filter-bar button {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: none;
+            background: #4fc3f7;
+            color: #000;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .filter-bar button:hover {
+            background: #80d8ff;
+        }
+        .photo-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 4px;
+            min-height: 0;
+        }
+        .photo-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .photo-list::-webkit-scrollbar-thumb {
+            background: #4fc3f7;
+            border-radius: 4px;
+        }
+        .photo-list::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        .photo-item {
+            display: flex;
+            background: #1a1a2e;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #2a2a3e;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s;
+            flex-shrink: 0;
+        }
+        .photo-item:hover {
+            border-color: #4fc3f7;
+            transform: scale(1.005);
+        }
+        .photo-thumb {
+            flex: 0 0 80px;
+            width: 80px;
+            height: 80px;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .photo-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .photo-info {
+            flex: 1;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            min-width: 0;
+        }
+        .photo-alert {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .photo-alert .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .tag.pass {
+            background: #2e7d32;
+            color: #a5d6a7;
+        }
+        .tag.stay {
+            background: #b71c1c;
+            color: #ffcdd2;
+        }
+        .photo-time {
+            font-size: 13px;
+            color: #888;
+        }
+        .empty {
+            text-align: center;
+            color: #666;
+            padding: 60px 0;
+            font-size: 16px;
+        }
+        .loading {
+            text-align: center;
+            color: #4fc3f7;
+            padding: 60px 0;
+            font-size: 16px;
+        }
+        /* ===== 模态框 ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal img {
+            max-width: 100%;
+            max-height: 75vh;
+            border-radius: 12px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+            object-fit: contain;
+        }
+        .modal-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .modal-actions button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-close {
+            background: #555;
+            color: #fff;
+        }
+        .btn-close:hover {
+            background: #777;
+        }
+        .btn-save {
+            background: #4fc3f7;
+            color: #000;
+        }
+        .btn-save:hover {
+            background: #80d8ff;
+        }
+        .modal .info-text {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 12px;
+            text-align: center;
+            max-width: 90%;
+        }
+        .footer {
+            text-align: center;
+            color: #333;
+            font-size: 12px;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 认证界面 -->
+    <div id="authContainer">
+        <h1>📸 智能门铃</h1>
+        <div id="loginForm" class="auth-box">
+            <h2>🔐 登录</h2>
+            <div id="loginError" class="error-msg"></div>
+            <div id="loginSuccess" class="success-msg"></div>
+            <input type="email" id="loginEmail" placeholder="邮箱地址" />
+            <input type="password" id="loginPassword" placeholder="密码" />
+            <button id="loginBtn" onclick="handleLogin()">登录</button>
+            <div class="switch-link">还没有账号？<a onclick="showRegister()">立即注册</a></div>
+        </div>
+        <div id="registerForm" class="auth-box" style="display:none;">
+            <h2>📝 注册</h2>
+            <div id="regError" class="error-msg"></div>
+            <div id="regSuccess" class="success-msg"></div>
+            <input type="email" id="regEmail" placeholder="邮箱地址" />
+            <input type="password" id="regPassword" placeholder="密码（至少6位）" />
+            <input type="text" id="regDeviceId" placeholder="设备 ID" />
+            <div class="device-hint">💡 设备 ID 请在门铃配网页面（AP模式）查看</div>
+            <button id="regBtn" onclick="handleRegister()">注册</button>
+            <div class="switch-link">已有账号？<a onclick="showLogin()">去登录</a></div>
+        </div>
+    </div>
+
+    <!-- 照片墙 -->
+    <div id="photoApp">
+        <div class="header-row">
+            <h1>📸 门铃抓拍记录</h1>
+            <button class="logout-btn" onclick="handleLogout()">退出</button>
+        </div>
+        <div class="filter-bar">
+            <input type="date" id="filterDate" onchange="applyFilters()" />
+            <select id="filterType" onchange="applyFilters()">
+                <option value="all">全部类型</option>
+                <option value="pass">仅路过</option>
+                <option value="stay">仅可疑停留</option>
+            </select>
+            <button onclick="resetFilters()">重置</button>
+        </div>
+        <div id="photoContainer" class="photo-list"><div class="loading">⏳ 加载中...</div></div>
+        <div class="footer">ESP32-S3 · 数据存于云端</div>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modal" class="modal" onclick="if(event.target===this) closeModal()">
+        <img id="modalImg" src="" alt="大图" />
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveCurrentImage()">💾 保存图片</button>
+            <button class="btn-close" onclick="closeModal()">✕ 关闭</button>
+        </div>
+        <div id="modalInfo" class="info-text"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://doorbell-api-jclvfiemao.cn-shenzhen.fcapp.run';
+    
+        let allPhotos = [];
+        let filteredPhotos = [];
+        let currentModalIndex = -1;
+        let currentDeviceId = null;
+        let currentEmail = null;
+    
+        // ---- 工具函数 ----
+        function formatTime(timestamp) {
+            if (!timestamp) return '未知时间';
+            const d = new Date(timestamp);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+    
+        function getDateKey(timestamp) {
+            const d = new Date(timestamp);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        }
+    
+        // ---- 界面切换 ----
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('loginSuccess').textContent = '';
+            document.getElementById('regError').textContent = '';
+            document.getElementById('regSuccess').textContent = '';
+        }
+    
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('loginSuccess').textContent = '';
+            document.getElementById('regError').textContent = '';
+            document.getElementById('regSuccess').textContent = '';
+        }
+    
+        // ---- 登录 ----
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            const successEl = document.getElementById('loginSuccess');
+            const btn = document.getElementById('loginBtn');
+    
+            errorEl.textContent = '';
+            successEl.textContent = '';
+    
+            if (!email || !password) {
+                errorEl.textContent = '⚠️ 请输入邮箱和密码';
+                return;
+            }
+    
+            btn.disabled = true;
+            btn.textContent = '登录中...';
+    
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+    
+                if (response.ok && data.success) {
+                    successEl.textContent = '✅ 登录成功！';
+                    currentEmail = data.user.email;
+                    currentDeviceId = data.user.deviceId;
+                    sessionStorage.setItem('doorbell_user', JSON.stringify({
+                        email: currentEmail,
+                        deviceId: currentDeviceId
+                    }));
+                    document.getElementById('authContainer').style.display = 'none';
+                    document.getElementById('photoApp').style.display = 'flex';
+                    loadPhotos();
+                } else {
+                    errorEl.textContent = '❌ ' + (data.error || '登录失败，请重试');
+                }
+            } catch (err) {
+                errorEl.textContent = '❌ 网络错误，请检查网络';
+                console.error('Login error:', err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '登录';
+            }
+        }
+    
+        // ---- 注册 ----
+        async function handleRegister() {
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const deviceId = document.getElementById('regDeviceId').value.trim();
+            const errorEl = document.getElementById('regError');
+            const successEl = document.getElementById('regSuccess');
+            const btn = document.getElementById('regBtn');
+    
+            errorEl.textContent = '';
+            successEl.textContent = '';
+    
+            if (!email || !password || !deviceId) {
+                errorEl.textContent = '⚠️ 请填写完整信息';
+                return;
+            }
+            if (password.length < 6) {
+                errorEl.textContent = '⚠️ 密码至少6位';
+                return;
+            }
+    
+            btn.disabled = true;
+            btn.textContent = '注册中...';
+    
+            try {
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, deviceId })
+                });
+                const data = await response.json();
+    
+                if (response.ok && data.success) {
+                    successEl.textContent = '✅ 注册成功！请登录';
+                    document.getElementById('regEmail').value = '';
+                    document.getElementById('regPassword').value = '';
+                    document.getElementById('regDeviceId').value = '';
+                    document.getElementById('loginEmail').value = email;
+                    setTimeout(showLogin, 500);
+                } else {
+                    errorEl.textContent = '❌ ' + (data.error || '注册失败，请重试');
+                }
+            } catch (err) {
+                errorEl.textContent = '❌ 网络错误，请检查网络';
+                console.error('Register error:', err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '注册';
+            }
+        }
+    
+        // ---- 退出 ----
+        function handleLogout() {
+            sessionStorage.removeItem('doorbell_user');
+            currentEmail = null;
+            currentDeviceId = null;
+            allPhotos = [];
+            filteredPhotos = [];
+            document.getElementById('photoApp').style.display = 'none';
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('loginSuccess').textContent = '';
+            document.getElementById('photoContainer').innerHTML = '';
+        }
+    
+        // ---- 检查登录状态 ----
+        function checkSession() {
+            const saved = sessionStorage.getItem('doorbell_user');
+            if (saved) {
+                try {
+                    const user = JSON.parse(saved);
+                    if (user.email && user.deviceId) {
+                        currentEmail = user.email;
+                        currentDeviceId = user.deviceId;
+                        document.getElementById('authContainer').style.display = 'none';
+                        document.getElementById('photoApp').style.display = 'flex';
+                        loadPhotos();
+                        return true;
+                    }
+                } catch (e) {}
+            }
+            return false;
+        }
+    
+        // ---- 渲染照片列表 ----
+        function renderPhotos(photos) {
+            const container = document.getElementById('photoContainer');
+            if (!photos || photos.length === 0) {
+                container.innerHTML = '<div class="empty">📭 暂无照片，快去触发门铃吧！</div>';
+                return;
+            }
+    
+            const sorted = [...photos].sort((a, b) => b.timestamp - a.timestamp);
+            filteredPhotos = sorted;
+    
+            let html = '';
+            for (let idx = 0; idx < sorted.length; idx++) {
+                const photo = sorted[idx];
+                const alertText = photo.type === 'stay' ? '⚠️ 可疑停留' : '🚶 有人经过';
+                const tagClass = photo.type === 'stay' ? 'stay' : 'pass';
+                const timeStr = formatTime(photo.timestamp);
+    
+                html += `
+                    <div class="photo-item" data-index="${idx}" onclick="openModal(${idx})">
+                        <div class="photo-thumb">
+                            <img src="${photo.url}" alt="缩略图" loading="lazy" onerror="this.style.display='none'" />
+                        </div>
+                        <div class="photo-info">
+                            <div class="photo-alert"><span class="tag ${tagClass}">${alertText}</span></div>
+                            <div class="photo-time">🕒 ${timeStr}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+    
+        // ---- 加载照片数据（不传递 deviceId，后端自动获取） ----
+        async function loadPhotos() {
+            const container = document.getElementById('photoContainer');
+            container.innerHTML = '<div class="loading">⏳ 加载中...</div>';
+    
+            // 确保 email 有效
+            if (!currentEmail) {
+                const saved = sessionStorage.getItem('doorbell_user');
+                if (saved) {
+                    try {
+                        const user = JSON.parse(saved);
+                        if (user.email) {
+                            currentEmail = user.email;
+                            currentDeviceId = user.deviceId || null;
+                        }
+                    } catch (e) {}
+                }
+            }
+    
+            if (!currentEmail) {
+                container.innerHTML = '<div class="empty">❌ 未登录，请重新登录</div>';
+                return;
+            }
+    
+            try {
+                const response = await fetch(`${API_BASE}/get-photos`, {
+                    method: 'GET',
+                    headers: {
+                        'X-User-Email': currentEmail
+                    }
+                });
+    
+                if (!response.ok) {
+                    let errorMsg = 'HTTP ' + response.status;
+                    try {
+                        const data = await response.json();
+                        if (data.error) errorMsg = data.error;
+                    } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+    
+                const data = await response.json();
+    
+                if (!Array.isArray(data) || data.length === 0) {
+                    allPhotos = [];
+                    renderPhotos([]);
+                    return;
+                }
+    
+                allPhotos = data
+                    .filter(item => item.filename && item.url)
+                    .map(item => ({
+                        filename: item.filename,
+                        type: item.type || 'pass',
+                        timestamp: item.timestamp || Date.now(),
+                        url: item.url,
+                        deviceId: item.deviceId || currentDeviceId
+                    }));
+    
+                applyFilters();
+    
+            } catch (err) {
+                console.error('加载照片失败:', err);
+                container.innerHTML = `
+                    <div class="empty" style="color:#ff6b6b;">
+                        ❌ 加载失败<br>
+                        <span style="font-size:14px;color:#888;">${err.message}</span>
+                        <br><br>
+                        <button onclick="loadPhotos()" style="padding:8px 20px;background:#4fc3f7;color:#000;border:none;border-radius:6px;font-weight:600;cursor:pointer;">重试</button>
+                    </div>
+                `;
+            }
+        }
+    
+        // ---- 筛选 ----
+        function applyFilters() {
+            const dateVal = document.getElementById('filterDate').value;
+            const typeVal = document.getElementById('filterType').value;
+            let result = allPhotos;
+            if (dateVal) {
+                result = result.filter(p => getDateKey(p.timestamp) === dateVal);
+            }
+            if (typeVal !== 'all') {
+                result = result.filter(p => p.type === typeVal);
+            }
+            renderPhotos(result);
+        }
+    
+        function resetFilters() {
+            document.getElementById('filterDate').value = '';
+            document.getElementById('filterType').value = 'all';
+            applyFilters();
+        }
+    
+        // ---- 模态框 ----
+        function openModal(index) {
+            const photos = filteredPhotos;
+            if (!photos || index < 0 || index >= photos.length) return;
+            currentModalIndex = index;
+    
+            const photo = photos[index];
+            const modal = document.getElementById('modal');
+            const modalImg = document.getElementById('modalImg');
+            const modalInfo = document.getElementById('modalInfo');
+    
+            modalImg.src = photo.url;
+            modalImg.alt = photo.filename;
+    
+            const alertText = photo.type === 'stay' ? '⚠️ 可疑停留' : '🚶 有人经过';
+            modalInfo.textContent = `${alertText}  |  ${formatTime(photo.timestamp)}`;
+    
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    
+        function saveCurrentImage() {
+            const modalImg = document.getElementById('modalImg');
+            if (!modalImg || !modalImg.src) {
+                alert('没有图片可保存');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = modalImg.src;
+            const filename = modalImg.src.split('/').pop().split('?')[0] || 'doorbell_photo.jpg';
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    
+        // ---- 键盘快捷键 ----
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    
+        // ---- 初始化 ----
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('loginEmail').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('regPassword').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleRegister();
+            });
+            document.getElementById('regDeviceId').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleRegister();
+            });
+            document.getElementById('regEmail').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleRegister();
+            });
+    
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDate').value = today;
+    
+            const loggedIn = checkSession();
+            if (!loggedIn) {
+                document.getElementById('authContainer').style.display = 'flex';
+                document.getElementById('photoApp').style.display = 'none';
+            }
+        });
+    
+        // ---- 暴露全局函数 ----
+        window.loadPhotos = loadPhotos;
+        window.applyFilters = applyFilters;
+        window.resetFilters = resetFilters;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.saveCurrentImage = saveCurrentImage;
+        window.handleLogin = handleLogin;
+        window.handleRegister = handleRegister;
+        window.handleLogout = handleLogout;
+        window.showLogin = showLogin;
+        window.showRegister = showRegister;
+    </script>
+
+</body>
+</html>
