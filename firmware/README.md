@@ -61,9 +61,10 @@
 │ └────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────┘
 
-text
+
 
 ## 📂 项目结构
+```text
 firmware/
 ├── main/
 │ ├── main.cpp # 主入口，任务创建与初始化
@@ -86,7 +87,7 @@ firmware/
 ├── idf_component.yml # 组件依赖声明
 └── README.md # 本文档
 
-text
+```
 
 ## 🔧 编译与烧录
 
@@ -101,100 +102,113 @@ text
 ```bash
 git clone https://github.com/LJJ26liu/smart-doorbell.git
 cd smart-doorbell/firmware
-配置目标芯片
+```
+3. **配置目标芯片**
 
-bash
+```bash
 idf.py set-target esp32s3
-配置 Flash 大小
+```
 
-bash
+4. **配置 Flash 大小**
+
+```bash
 idf.py menuconfig
 # 进入 Serial flasher config → Flash size → 选择 8 MB（根据实际开发板调整）
-配置 OSS 密钥
+```
+
+5. **配置 OSS 密钥**
 
 修改 main/cloud_upload.h，填入阿里云 OSS 密钥：
 
-c
+```c
 #define OSS_ACCESS_KEY     "YOUR_ACCESS_KEY"
 #define OSS_ACCESS_SECRET  "YOUR_ACCESS_SECRET"
 #define OSS_ENDPOINT       "oss-cn-guangzhou.aliyuncs.com"
 #define OSS_BUCKET         "your-bucket-name"
-编译
-bash
+```
+
+### 编译
+```bash
 idf.py build
-烧录
-bash
+```
+### 烧录
+```bash
 idf.py -p /dev/ttyUSB0 flash
-（Windows 下端口为 COMx，Linux/macOS 为 /dev/ttyUSBx）
+```
+> （Windows 下端口为 COMx，Linux/macOS 为 /dev/ttyUSBx）
 
-查看日志
-bash
+### 查看日志
+```bash
 idf.py monitor
-📋 硬件接线说明
-外设	引脚	说明
-OV2640 摄像头	GPIO3-10, 11, 12, 13, 14, 15, 16, 17, 21	详见 camera_driver.h
-PIR 传感器	GPIO18	输入，内部下拉，高电平触发
-门铃按键（外接）	GPIO39	输入，内部上拉，按下低电平
-蜂鸣器	GPIO40	PWM 输出，低电平鸣叫
-BOOT 按键	GPIO0	内部上拉，按下低电平（配网重置可用）
-详细接线图请参考项目根目录的 hardware/ 文件夹。
+```
+## 📋 硬件接线说明
+|外设	|引脚|	说明|
+|-----|---|------|
+|OV2640 摄像头|	GPIO3-10, 11, 12, 13, 14, 15, 16, 17, 21	|详见 camera_driver.h|
+|PIR 传感器|	GPIO18	|输入，内部下拉，高电平触发|
+|门铃按键（外接）|	GPIO39	|输入，内部上拉，按下低电平|
+|蜂鸣器|	GPIO40|	PWM 输出，低电平鸣叫|
+|BOOT 按键|	GPIO0	|内部上拉，按下低电平（配网重置可用）|
+> 详细接线图请参考项目根目录的 hardware/ 文件夹。
 
-⚙️ 功能说明
-1. PIR 人体感应
-10 次采样滤波，消除误触
+## ⚙️ 功能说明
+1. **PIR 人体感应**
+- **10 次采样滤波，消除误触**
 
-12 秒冷却机制，防止重复触发
+- **12 秒冷却机制，防止重复触发**
 
-高电平有效，检测到人时触发抓拍流程
+- **高电平有效，检测到人时触发抓拍流程**
 
-2. 边缘 AI 推理
-使用 pedestrian_detect_pico_s8_v1.espdl 模型（esp-dl）
+2. **边缘 AI 推理**
+- **使用 pedestrian_detect_pico_s8_v1.espdl 模型（esp-dl）**
 
-检测框过滤：宽高比 0.25~0.9、面积占比 0.5%~80%、位置过滤
+- **检测框过滤：宽高比 0.25~0.9、面积占比 0.5%~80%、位置过滤**
 
-置信度阈值：0.3
+- **置信度阈值：0.3**
 
-3. 路过/逗留区分
-阶段	操作	标记
-首次检测	立即抓拍 + AI 推理 + 上传	pass
-5 秒后二次确认	重新抓拍 + 推理，若仍有人形	stay
-人员离开	仅上传第一张（标记 pass）	—
-4. 云端上传
-路径格式：{deviceId}/{filename}.jpg
+3. **路过/逗留区分**
+|阶段	|操作|	标记|
+|----|----|----|
+|首次检测|	立即抓拍 + AI 推理 + 上传	|pass|
+|5 秒后二次确认|	重新抓拍 + 推理，若仍有人形	|stay|
+|人员离开|	仅上传第一张（标记 pass）	| - |
+5. **云端上传**
+- **路径格式**：{deviceId}/{filename}.jpg
 
-索引文件：{deviceId}/{deviceId}.json
+- **索引文件**：{deviceId}/{deviceId}.json
 
-每条记录包含：filename、type（pass/stay）、timestamp、deviceId
+- **每条记录包含**：filename、type（pass/stay）、timestamp、deviceId
 
-5. WiFi 配网
-STA 模式：自动连接已保存的 WiFi
+5. **WiFi 配网**
+- **STA 模式**：自动连接已保存的 WiFi
 
-SoftAP 模式：未配网时自动启动热点
+- **SoftAP 模式**：未配网时自动启动热点
 
-SSID：Doorbell_Config（可自定义）
+- ****SSID****：Doorbell_Config（可自定义）
 
-密码：12345678（可自定义）
+- ****密码****：12345678（可自定义）
 
 配网页面：http://192.168.4.1
 
 登录密码：6 位随机数（串口日志输出）
 
-6. 本地 Web 服务器
-端口：80
+6. **本地 Web 服务器**
+- **端口**：80
 
-功能：WiFi 配网设置、设备 ID 显示
+- **功能**：WiFi 配网设置、设备 ID 显示
 
-登录密码：每设备唯一，串口日志输出
+- **登录密码**：每设备唯一，串口日志输出
 
-🔐 安全设计
-安全措施	说明
-设备 ID 隔离	OSS 路径按设备 ID 区分，不同设备数据隔离
-OSS 私有读	图片不公开访问，需签名 URL
-配网动态密码	每设备随机生成 6 位密码，防止未授权配网
-NVS 持久化	WiFi 配网信息加密存储于 NVS
-HTTPS 支持	可启用 HTTPS（需证书）
-🧪 运行日志示例
-text
+## 🔐 安全设计
+|安全措施	|说明|
+|---|---|
+|设备 ID 隔离	|OSS 路径按设备 ID 区分，不同设备数据隔离|
+|OSS 私有读	|图片不公开访问，需签名 URL|
+|配网动态密码	|每设备随机生成 6 位密码，防止未授权配网|
+|NVS 持久化	|WiFi 配网信息加密存储于 NVS|
+|HTTPS 支持	|可启用 HTTPS（需证书）|
+## 🧪 运行日志示例
+```text
 I (1234) MAIN: ==========================================
 I (1234) MAIN: 智能门铃系统启动中...
 I (1234) MAIN: ==========================================
@@ -223,12 +237,12 @@ I (1234) 云存储: 正在上传到 http://bucket.oss-cn-guangzhou.aliyuncs.com/
 I (1234) 云存储: ✅ 上传成功！ETag: "abcd1234"
 ✅ 第一张照片上传成功并更新索引 (pass)
 ⏳ 等待5秒进行二次确认...
-📄 License
+```
+## 📄 License
 MIT © 林佳佳
 
-🔗 相关项目
-云端后端 - 阿里云 FC 云函数
+## 🔗 相关项目
 
-前端照片墙 - GitHub Pages 部署的 Web 应用
-
-硬件设计 - 硬件外设清单与接线图
+- [前端照片墙](../frontend/) - GitHub Pages 部署的 Web 应用
+- [云函数后端](../cloud/) - 阿里云 FC 云函数
+- [硬件设计](../hardware/) - 硬件外设清单与接线图
