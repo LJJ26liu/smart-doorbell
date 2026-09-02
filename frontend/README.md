@@ -67,6 +67,7 @@ frontend/
 
 ```javascript
 const API_BASE = 'https://doorbell-api-jclvfiemao.cn-shenzhen.fcapp.run';
+```
 后端 API 依赖
 本前端需要以下后端接口支持：
 
