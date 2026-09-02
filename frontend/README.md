@@ -37,8 +37,11 @@
 | **阿里云 OSS** | 照片存储（通过签名 URL 访问） |
 | **GitHub Pages** | 前端托管（也可部署到任何静态服务器） |
 
-```text
+
 ## 📂 项目结构
+
+
+```text
 frontend/
 ├── index.html # 主页面（包含全部 CSS 和 JavaScript）
 └── README.md # 项目说明文档
