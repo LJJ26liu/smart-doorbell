@@ -29,52 +29,8 @@
 
 ## 🏗️ 系统架构
 
-```mermaid
-flowchart TB
-    subgraph ESP32-S3["ESP32-S3 主控"]
-        subgraph RTOS["FreeRTOS 任务调度"]
-            Task1["PIR 检测任务<br>（10次采样滤波 + 12s冷却）"]
-            Task2["按键响应任务<br>（门铃触发旋律）"]
-            Task3["Web 配网服务<br>（端口 80）"]
-        end
+<img width="817" height="1047" alt="image" src="https://github.com/user-attachments/assets/0fd8bfb6-91b0-4982-97ba-ebb8662eb736" />
 
-        subgraph AI["边缘 AI 推理引擎"]
-            Model["行人检测模型<br>pedestrian_detect_pico_s8_v1.espdl"]
-            Filter["检测框过滤<br>宽高比/面积比/位置"]
-            Result["判定逻辑<br>pass ➜ 5秒后 ➜ stay"]
-        end
-
-        subgraph Drivers["硬件驱动层"]
-            Cam[OV2640 摄像头]
-            PIR[PIR 传感器<br>GPIO18]
-            Buzzer[蜂鸣器<br>GPIO40]
-            Button[门铃按键<br>GPIO39]
-        end
-    end
-
-    subgraph Cloud["云端服务"]
-        OSS[阿里云 OSS<br>HTTP PUT 直传 JPEG]
-        JSON[索引文件<br>{deviceId}/{deviceId}.json]
-        FC[阿里云 FC 云函数]
-    end
-
-    subgraph User["用户端"]
-        WebUI[GitHub Pages<br>照片墙 Web 应用]
-        App[手机/电脑浏览器]
-    end
-
-    PIR -->|上升沿触发| Task1
-    Task1 -->|唤醒抓拍| Cam
-    Cam -->|JPEG 图像| AI
-    AI -->|检测到人形| Task3
-    Task3 -->|配网页面| App
-    Task1 -->|上传图片| OSS
-    OSS -->|存储| JSON
-    FC -->|签名 URL| WebUI
-    App -->|访问| WebUI
-    Button -->|按下| Task2
-    Task2 -->|播放旋律| Buzzer
-```
 
 ## 📂 项目结构
 ```text
