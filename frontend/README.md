@@ -80,6 +80,7 @@ const API_BASE = 'https://doorbell-api-jclvfiemao.cn-shenzhen.fcapp.run';
 |/register|	POST	|用户注册|
 |/login	|POST	|用户登录|
 |/get-photos	|GET|	获取照片列表（需携带 X-User-Email 头）|
+|---------------------|
 后端实现详见项目根目录的 cloud/ 文件夹。
 
 ## 🔐 安全说明
@@ -92,6 +93,8 @@ const API_BASE = 'https://doorbell-api-jclvfiemao.cn-shenzhen.fcapp.run';
 |登录页|	照片墙|	大图预览|
 |------|------|------|
 |https://via.placeholder.com/200x400?text=Login|	https://via.placeholder.com/200x400?text=Photos|	https://via.placeholder.com/200x400?text=Preview
+|-------|
+
 实际效果请访问部署后的在线地址。
 
 ## 📄 License
