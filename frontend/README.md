@@ -32,9 +32,9 @@
 |------|------|
 | **HTML5** | 页面结构 |
 | **CSS3** | 界面样式（暗色主题，移动端优先） |
-| **JavaScript (ES6+)** | 业务逻辑、API 调用 |
-| **阿里云 FC** | 云函数后端 API（登录/注册/获取照片） |
-| **阿里云 OSS** | 照片存储（通过签名 URL 访问） |
+| **JavaScript (ES6+)** | 业务逻辑、API 调用（原生 Fetch） |
+| **阿里云 FC** | 后端 API 接口 |
+| **阿里云 OSS** | 照片存储（通过 FC 生成的临时签名 URL 访问） |
 | **GitHub Pages** | 前端托管（也可部署到任何静态服务器） |
 
 
@@ -72,15 +72,18 @@ frontend/
 ```javascript
 const API_BASE = 'https://doorbell-api-jclvfiemao.cn-shenzhen.fcapp.run';
 ```
+
 ### 后端 API 依赖
+
 本前端需要以下后端接口支持：
 
-|接口	|方法|	说明|
+| 接口 | 方法 | 说明 |
 |------|------|------|
-|/register|	POST	|用户注册|
-|/login	|POST	|用户登录|
-|/get-photos	|GET|	获取照片列表（需携带 X-User-Email 头）|
-> 后端实现详见项目根目录的 cloud/ 文件夹。
+| `/register` | POST | 用户注册（邮箱 + 密码 + 设备 ID） |
+| `/login` | POST | 用户登录（返回用户信息 + 设备 ID） |
+| `/get-photos` | GET | 获取照片列表（需携带 `X-User-Email` 请求头） |
+
+> 后端实现详见项目根目录的 `cloud/` 文件夹。
 
 ## 🔐 安全说明
 
@@ -89,18 +92,25 @@ const API_BASE = 'https://doorbell-api-jclvfiemao.cn-shenzhen.fcapp.run';
 - **图片访问**：所有图片通过 FC 云函数生成的**临时签名 URL** 访问，有效期 5 分钟，防止 OSS 数据被公开访问
 
 ## 📱 界面预览
-|登录页|	照片墙|	大图预览|
-|------|------|------|
-|https://via.placeholder.com/200x400?text=Login|	https://via.placeholder.com/200x400?text=Photos|	https://via.placeholder.com/200x400?text=Preview
 
+| 登录页 | 照片墙 | 大图预览 |
+|--------|--------|----------|
+| <img width="2879" height="1612" alt="网页端-登陆界面" src="https://github.com/user-attachments/assets/e913b0bb-fcce-4182-bec0-dc5aa408deed" />|<img width="2879" height="1613" alt="网页端-照片列表1" src="https://github.com/user-attachments/assets/64b34ede-1ec9-4b28-81a2-0e16640b653d" />|<img width="2879" height="1606" alt="网页端-多人识别" src="https://github.com/user-attachments/assets/efcfecb2-98a4-4b0b-804c-951173544ff2" />|
 
-> 实际效果请访问部署后的在线地址。
-
-## 📄 License
-MIT © 林佳佳
+> ⚠️ 以上为功能示意截图，实际效果以部署后为准。
 
 ## 🔗 相关项目
 
 - [设备端固件](../firmware/) - ESP32-S3 门铃固件
 - [云函数后端](../cloud/) - 阿里云 FC 云函数
 - [硬件设计](../hardware/) - 硬件外设清单与接线图
+- [项目总览](../README.md) - 完整项目说明
+
+# 保留所有权利
+
+Copyright (c) 2026 林佳佳
+
+本作品仅供展示，不得用于任何商业或学术用途。
+如需使用，请联系作者获取授权。
+
+作者邮箱：362039836@qq.com
