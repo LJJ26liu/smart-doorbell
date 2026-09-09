@@ -2,7 +2,6 @@
 
 > 端云一体智能门铃 · 毕业设计作品 · ESP32-S3 + 边缘 AI + 阿里云 FC
 
-[![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)]()
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.4.4-blue)](https://github.com/espressif/esp-idf)
 [![Node.js](https://img.shields.io/badge/Node.js-18-green)](https://nodejs.org/)
 
