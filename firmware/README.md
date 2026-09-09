@@ -29,7 +29,8 @@
 
 ## 🏗️ 系统架构
 
-<img width="817" height="1047" alt="image" src="https://github.com/user-attachments/assets/0fd8bfb6-91b0-4982-97ba-ebb8662eb736" />
+<img width="2239" height="929" alt="系统架构图" src="https://github.com/user-attachments/assets/8a066af8-64e6-4be7-a90a-ac505d4b8e2f" />
+
 
 
 ## 📂 项目结构
@@ -84,16 +85,15 @@ idf.py menuconfig
 # 进入 Serial flasher config → Flash size → 选择 8 MB（根据实际开发板调整）
 ```
 
-5. **配置 OSS 密钥**
+5. **配置 FC 上传地址**
 
-修改 main/cloud_upload.h，填入阿里云 OSS 密钥：
+修改 `main/cloud_upload.c`，填入阿里云 FC 的 HTTP 触发 URL：
 
 ```c
-#define OSS_ACCESS_KEY     "YOUR_ACCESS_KEY"
-#define OSS_ACCESS_SECRET  "YOUR_ACCESS_SECRET"
-#define OSS_ENDPOINT       "oss-cn-guangzhou.aliyuncs.com"
-#define OSS_BUCKET         "your-bucket-name"
+#define FC_UPLOAD_URL "https://your-fc-domain/upload"
 ```
+
+> 注意：本固件不包含 OSS 密钥。图片通过 FC 云函数代理上传，密钥存储在 FC 的环境变量中，固件仅包含 FC 的公开 URL，无任何敏感信息。
 
 ### 编译
 ```bash
@@ -146,11 +146,32 @@ idf.py monitor
 
 ### 4. **云端上传**
 
-- **路径格式**：{deviceId}/{filename}.jpg
+固件将 JPEG 图片 Base64 编码后，通过 JSON 格式 POST 到阿里云 FC（函数计算），由 FC 代理完成：
 
-- **索引文件**：{deviceId}/{deviceId}.json
+- **上传到 OSS**：FC 解码 Base64 并写入 OSS
+- **索引更新**：FC 自动维护 `{deviceId}/{deviceId}.json` 索引文件
+- **密钥安全**：OSS 密钥存储在 FC 环境变量中，固件无任何敏感信息
 
-- **每条记录包含**：filename、type（pass/stay）、timestamp、deviceId
+**数据格式**：
+- 请求方式：`POST /upload`
+- Content-Type：`application/json`
+- 请求体：
+
+```json
+{
+  "deviceId": "94a990dbbad0",
+  "type": "pass",
+  "image": "base64_encoded_jpeg"
+}
+```
+
+**路径格式**:
+
+- 图片：`{deviceId}/{filename}.jpg`
+
+- 索引文件：`{deviceId}/{deviceId}.json`
+  
+- 每条记录包含：`filename、type（pass/stay）、timestamp、deviceId`
 
 ### 5. WiFi 配网
 
@@ -191,49 +212,125 @@ idf.py monitor
 
 ## 🔐 安全设计
 
-|安全措施	|说明|
-|---|---|
-|设备 ID 隔离	|OSS 路径按设备 ID 区分，不同设备数据隔离|
-|OSS 私有读	|图片不公开访问，需签名 URL|
-|配网动态密码	|每设备随机生成 6 位密码，防止未授权配网|
-|NVS 持久化	|WiFi 配网信息加密存储于 NVS|
-|HTTPS 支持	|可启用 HTTPS（需证书）|
+| 安全措施 | 说明 |
+|----------|------|
+| **FC 代理上传** | OSS 密钥存储在 FC 环境变量中，固件无任何 AK/SK，物理提取固件也无法获取云权限 |
+| **设备 ID 隔离** | OSS 路径按设备 ID 区分，不同设备数据隔离 |
+| **OSS 私有读** | 图片不公开访问，需 FC 生成签名 URL（有效期 300 秒） |
+| **配网动态密码** | 每设备随机生成 6 位密码，防止未授权配网 |
+| **NVS 持久化** | WiFi 配网信息存储于 NVS，断电不丢失 |
+| **AP+STA 共存** | AP 常驻，即使 STA 断网也可通过热点配网恢复 |
+| **HTTPS 支持** | 可启用 HTTPS（需配置证书） |
 
 ## 🧪 运行日志示例
 
 ```text
-I (1234) MAIN: ==========================================
-I (1234) MAIN: 智能门铃系统启动中...
-I (1234) MAIN: ==========================================
-I (1234) NVS: NVS初始化完成
-I (1234) 设备ID: 设备ID已加载: 94a990dbbad0
-I (1234) GPIO: GPIO初始化完成: PIR=GPIO18, 内置按键=GPIO0, 外接按键=GPIO39
-I (1234) PWM: 蜂鸣器已初始化 (GPIO40)
-I (1234) WIFI: WiFi初始化完成
-I (1234) WIFI: 正在连接已保存的WiFi: MyHomeWiFi
-I (1234) WIFI: WiFi事件 ID: 4
-I (1234) WIFI: STA模式启动，正在连接WiFi...
-I (1234) WIFI: 获取到IP地址: 192.168.1.100
-I (1234) SNTP: ✅ SNTP时间同步成功: Mon Sep  2 10:30:00 2026
-I (1234) CAMERA: 正在初始化摄像头...
-I (1234) CAMERA: ✅ 真实摄像头初始化成功！
-I (1234) MAIN: 正在加载行人检测模型...
-I (1234) MAIN: ✅ 行人检测器创建成功 (阈值=0.3)
-I (1234) WEB: ========================================
-I (1234) WEB: 🔑 随机密码: 723641
-I (1234) WEB: ========================================
-I (1234) WEB: ✅ Web服务器已启动，请访问 http://192.168.4.1 并输入密码
-I (1234) MAIN: ✅ 所有系统就绪。
-🔴 PIR触发！ (时间: 10:30:15)
-📷 真实拍照成功: 2026-09-02_10-30-15.jpg (62341 字节)
-I (1234) 云存储: 正在上传到 http://bucket.oss-cn-guangzhou.aliyuncs.com/94a990dbbad0/2026-09-02_10-30-15.jpg
-I (1234) 云存储: ✅ 上传成功！ETag: "abcd1234"
-✅ 第一张照片上传成功并更新索引 (pass)
-⏳ 等待5秒进行二次确认...
+I (1333) MAIN: ==========================================
+I (1343) MAIN: 智能门铃系统启动中...
+I (1343) MAIN: ==========================================
+I (1383) MAIN: ✅ NVS初始化完成
+I (1383) 设备ID: 从NVS加载设备ID: 94a990dbbad0
+I (1383) MAIN: ✅ 设备ID初始化完成
+I (1413) GPIO: GPIO初始化完成: PIR=GPIO18 (下拉), 内置按键=GPIO0, 外接按键=GPIO39
+I (1423) MAIN: ✅ GPIO初始化完成
+I (1433) PWM: 蜂鸣器已初始化 (GPIO40)
+I (1443) MAIN: ✅ 蜂鸣器初始化完成
+I (1443) WIFI: 初始化WiFi (AP+STA模式)...
+I (1573) NVS: AP配置已加载: SSID=Doorbell_Config
+I (1573) WIFI: 加载自定义AP配置: SSID=Doorbell_Config
+I (1693) wifi:mode : sta (94:a9:90:db:ba:d0) + softAP (94:a9:90:db:ba:d1)
+I (1703) WIFI: STA 启动，开始连接...
+I (1723) NVS: WiFi配置已加载: SSID=cptbtptp
+I (1743) WIFI: 发现保存的WiFi配置，立即连接...
+I (1773) WIFI: 正在连接WiFi: cptbtptp
+I (1773) WIFI: ✅ WiFi初始化完成，AP SSID: Doorbell_Config
+I (1773) MAIN: ✅ WiFi管理器初始化完成
+W (1823) WIFI: WiFi断开，重试第 1 次...
+I (1893) wifi:connected with cptbtptp, aid = 2, channel 10, BW20
+I (3473) esp_netif_handlers: sta ip: 192.168.43.49, mask: 255.255.255.0, gw: 192.168.43.1
+I (3473) WIFI: ✅ 获取到IP地址: 192.168.43.49
+I (3473) WIFI: 手动设置 DNS: 8.8.8.8, 114.114.114.114
+I (3553) MAIN: ✅ STA已连接，IP: 192.168.43.49
+W (13553) MAIN: ⚠️ SNTP同步超时，时间可能不准确
+I (13553) CAMERA: 正在初始化摄像头...
+I (13793) CAMERA: ✅ 真实摄像头初始化成功！
+I (13793) CAMERA:    分辨率: QVGA (320x240)
+I (13793) CAMERA:    格式: JPEG
+I (13803) MAIN: ✅ 摄像头初始化完成
+I (13803) MAIN: 正在加载行人检测模型...
+I (14003) MAIN: ✅ 行人检测器创建成功 (阈值=0.3)
+I (14003) MAIN: 🔔 门铃按下！播放旋律...
+I (14103) MAIN: PIR检测任务已启动 (使用esp-dl行人检测)
+I (14113) WEB: 🔑 随机密码: 669046
+I (14123) WEB: ✅ Web服务器已启动，请访问 http://192.168.4.1 并输入密码
+I (14133) MAIN: ✅ 所有系统就绪。
+
+--- 首次 PIR 触发（时间未同步，AI 未检测到人形）---
+I (15753) MAIN: 🔴 PIR触发！ (时间: 未同步)
+I (15753) CAMERA: 📷 真实拍照成功: 1970-01-01_08-00-14.jpg
+I (16673) MAIN: 第一次抓拍未检测到人，丢弃
+
+--- 第二次 PIR 触发（时间已同步，检测到人形，上传 pass）---
+I (194073) MAIN: 🔴 PIR触发！ (时间: 16:41:36)
+I (194073) CAMERA: 📷 真实拍照成功: 2026-09-09_16-41-36.jpg
+I (195023) MAIN: 检测框: x=251, y=0, w=182, h=346, 置信度=0.815
+I (195323) 云存储: 正在上传图片到 FC，原始大小 27995 字节，类型 pass
+I (197463) 云存储: HTTP 状态码: 200
+I (197473) 云存储: ✅ 上传成功，OSS 路径: 未知
+I (197483) MAIN: ✅ 第一张照片上传成功并更新索引 (pass)
+
+--- 5秒后二次确认，人员仍在 → 上传 stay ---
+I (197493) MAIN: ⏳ 等待5秒进行二次确认...
+I (202493) CAMERA: 📷 真实拍照成功: 2026-09-09_16-41-44.jpg
+I (203443) MAIN: 确认框: x=348, y=1, w=226, h=371
+I (203733) 云存储: 正在上传图片到 FC，原始大小 26389 字节，类型 stay
+I (204633) 云存储: HTTP 状态码: 200
+I (204643) 云存储: ✅ 上传成功，OSS 路径: 未知
+W (204653) MAIN: ⚠️ 5秒后人员仍然存在！上传为STAY并更新索引。
+
+--- 第三次 PIR 触发（检测到人形，上传 pass，5秒后离开 → 仅路过）---
+I (207653) MAIN: 🔴 PIR触发！ (时间: 16:41:49)
+I (207653) CAMERA: 📷 真实拍照成功: 2026-09-09_16-41-49.jpg
+I (208593) MAIN: 检测框: x=219, y=0, w=156, h=249, 置信度=0.679
+I (208893) 云存储: 正在上传图片到 FC，原始大小 25840 字节，类型 pass
+I (210303) 云存储: HTTP 状态码: 200
+I (210313) 云存储: ✅ 上传成功，OSS 路径: 未知
+I (210323) MAIN: ✅ 第一张照片上传成功并更新索引 (pass)
+I (210333) MAIN: ⏳ 等待5秒进行二次确认...
+I (215333) CAMERA: 📷 真实拍照成功: 2026-09-09_16-41-57.jpg
+I (216273) MAIN: 确认框: x=109, y=1, w=182, h=223
+I (216573) 云存储: 正在上传图片到 FC，原始大小 25197 字节，类型 stay
+I (217503) 云存储: HTTP 状态码: 200
+I (217513) 云存储: ✅ 上传成功，OSS 路径: 未知
+I (217523) MAIN: ⚠️ 5秒后人员仍然存在！上传为STAY并更新索引。
+
+--- 第四次 PIR 触发（未检测到人形，丢弃）---
+I (222723) MAIN: 🔴 PIR触发！ (时间: 16:42:04)
+I (222723) CAMERA: 📷 真实拍照成功: 2026-09-09_16-42-04.jpg
+I (223653) MAIN: 第一次抓拍未检测到人，丢弃
+
+--- 第五次 PIR 触发（检测到人形，5秒后离开 → 仅路过）---
+I (235503) MAIN: 🔴 PIR触发！ (时间: 16:42:17)
+I (235503) CAMERA: 📷 真实拍照成功: 2026-09-09_16-42-17.jpg
+I (236453) MAIN: 检测框: x=555, y=0, w=244, h=595, 置信度=0.538
+I (236753) 云存储: 正在上传图片到 FC，原始大小 27796 字节，类型 pass
+I (237813) 云存储: HTTP 状态码: 200
+I (237823) 云存储: ✅ 上传成功，OSS 路径: 未知
+I (237833) MAIN: ✅ 第一张照片上传成功并更新索引 (pass)
+I (237833) MAIN: ⏳ 等待5秒进行二次确认...
+I (242843) CAMERA: 📷 真实拍照成功: 2026-09-09_16-42-25.jpg
+I (243763) MAIN: 人员在5秒内离开，仅路过。
+
+--- 门铃按键触发 ---
+I (248243) MAIN: 🔔 门铃按下！播放旋律...
+I (253343) PWM: 旋律播放结束
 ```
 
 ## 📄 License
+
 MIT © 林佳佳
+
+详见 [LICENSE](../LICENSE) 文件。
 
 ## 🔗 相关项目
 
