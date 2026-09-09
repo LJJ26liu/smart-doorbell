@@ -5,13 +5,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// OSS 配置（请按实际情况修改）
-#define OSS_ACCESS_KEY     "YOUR_ACCESS_KEY"      // 替换为实际参数
-#define OSS_ACCESS_SECRET  "YOUR_ACCESS_SECRET"      // 替换为实际参数
-#define OSS_ENDPOINT       "oss-cn-guangzhou.aliyuncs.com"
-#define OSS_BUCKET         "YOUR_BUCKET_NAME"      // 替换为实际参数
+/**
+ * 上传 JPEG 图片到云端（通过 FC 代理）
+ * @param filename  文件名（仅用于日志，实际由 FC 生成）
+ * @param data      图片数据
+ * @param len       数据长度
+ * @param type      类型："pass" 或 "stay"
+ * @return ESP_OK 成功，其他失败
+ */
 
-esp_err_t update_photos_index(const char *filename, const char *type);
+// esp_err_t update_photos_index(const char *filename, const char *type);
 esp_err_t cloud_upload_jpeg(const char *filename, const uint8_t *data, size_t len, const char *type);
 
 #endif

@@ -213,16 +213,12 @@ bool get_latest_photo(uint8_t **out_data, size_t *out_len) {
 }
 
 static void update_current_time(void) {
-    if (wifi_connected) {
-        time_t now = time(NULL);
-        if (now > 1000000000) {
-            struct tm *tm_info = localtime(&now);
-            strftime(current_time_str, sizeof(current_time_str), "%H:%M:%S", tm_info);
-        } else {
-            strcpy(current_time_str, "未同步");
-        }
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    if (tm_info && now > 1000000000) {   // 如果时间有效（>2001年）
+        strftime(current_time_str, sizeof(current_time_str), "%H:%M:%S", tm_info);
     } else {
-        strcpy(current_time_str, "离线");
+        strcpy(current_time_str, "未同步");
     }
 }
 
@@ -302,22 +298,6 @@ static void pir_detect_task(void *pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(100));
             if (gpio_get_level(PIR_GPIO) == 1) {
                 last_trigger_time = xTaskGetTickCount();
-
-                // ---- 等待时间同步 ----
-                int wait_cnt = 0;
-                const int max_wait = 30;
-                while (wait_cnt < max_wait) {
-                    time_t now_sec = time(NULL);
-                    if (now_sec > 1000000000) {
-                        break;
-                    }
-                    ESP_LOGI(TAG, "⏳ 等待时间同步... (%d/%d)", wait_cnt+1, max_wait);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                    wait_cnt++;
-                }
-                if (wait_cnt >= max_wait) {
-                    ESP_LOGW(TAG, "⚠️ 时间同步超时，使用当前时间");
-                }
 
                 update_current_time();
                 ESP_LOGI(TAG, "🔴 PIR触发！ (时间: %s)", current_time_str);

@@ -1,5 +1,6 @@
 #include "web_server.h"
 #include "nvs_storage.h"
+#include "wifi_manager.h"
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_system.h"
@@ -15,6 +16,7 @@ static char s_password[7] = {0};
 static int s_password_generated = 0;
 static bool s_logged_in = false;
 
+// ---------- 主页 ----------
 static const char* HOME_PAGE_TEMPLATE =
 "<!DOCTYPE html>"
 "<html><head><meta charset='UTF-8'>"
@@ -26,6 +28,7 @@ static const char* HOME_PAGE_TEMPLATE =
 ".device-id{background:#1a1a2e;padding:10px;border-radius:8px;margin:15px 0;border:1px solid #333;}"
 ".device-id code{color:#4fc3f7;font-size:18px;font-weight:bold;letter-spacing:1px;}"
 ".btn{display:inline-block;padding:10px 20px;margin:10px;background:#4fc3f7;color:#000;text-decoration:none;border-radius:5px;}"
+".btn-secondary{background:#666;}"
 ".hint{color:#888;font-size:13px;}"
 "</style>"
 "</head><body>"
@@ -35,9 +38,11 @@ static const char* HOME_PAGE_TEMPLATE =
 "<code>%s</code>"
 "</div>"
 "<p class='hint'>💡 在远程网页注册时需要使用此设备 ID</p>"
-"<a class='btn' href='/settings'>⚙️ 修改 WiFi 设置</a>"
+"<a class='btn' href='/settings' style='display:block; width:80%; margin:10px auto;'>⚙️ 修改 WiFi 设置</a>"
+"<a class='btn btn-secondary' href='/reconnect' style='display:block; width:80%; margin:10px auto;'>🔄 重连 WiFi</a>"
 "</body></html>";
 
+// ---------- 登录页面保持不变 ----------
 static const char* LOGIN_TEMPLATE =
 "<!DOCTYPE html>"
 "<html><head><meta charset='UTF-8'>"
@@ -59,6 +64,7 @@ static const char* LOGIN_TEMPLATE =
 "<div class=\"error\" id=\"errMsg\" style=\"display:%s;\">密码错误，请重试</div>"
 "</body></html>";
 
+// ---------- 设置页面保持不变 ----------
 static const char* SETTINGS_PAGE =
 "<!DOCTYPE html>"
 "<html><head><meta charset='UTF-8'>"
@@ -83,6 +89,7 @@ static const char* SETTINGS_PAGE =
 "<a href='/' style='color:#4fc3f7;'>← 返回主页</a>"
 "</body></html>";
 
+// ---------- 成功页面保持不变 ----------
 static const char* SUCCESS_PAGE =
 "<!DOCTYPE html>"
 "<html><head><meta charset='UTF-8'>"
@@ -98,6 +105,37 @@ static const char* SUCCESS_PAGE =
 "<p>若未自动跳转，请手动重新连接。</p>"
 "</body></html>";
 
+// ---------- 重连结果页面 ----------
+static const char* RECONNECT_RESULT_PAGE =
+"<!DOCTYPE html>"
+"<html><head><meta charset='UTF-8'>"
+"<title>重连WiFi</title>"
+"<style>"
+"body{font-family:Arial;background:#0a0a0a;color:#fff;padding:20px;text-align:center;}"
+".info{color:#4fc3f7;font-size:20px;}"
+".btn{display:inline-block;padding:10px 20px;margin:20px;background:#4fc3f7;color:#000;text-decoration:none;border-radius:5px;}"
+"</style>"
+"</head><body>"
+"<h1 class='info'>🔄 正在重连 WiFi...</h1>"
+"<p>请稍候，设备正在尝试连接。</p>"
+"<p id='countdown'>3 秒后自动返回首页</p>"
+"<a class='btn' href='/'>⬅ 立即返回</a>"
+"<script>"
+"var seconds = 3;"
+"var el = document.getElementById('countdown');"
+"var timer = setInterval(function(){"
+"    seconds--;"
+"    if(seconds <= 0){"
+"        clearInterval(timer);"
+"        window.location.href = '/';"
+"    } else {"
+"        el.textContent = seconds + ' 秒后自动返回首页';"
+"    }"
+"}, 1000);"
+"</script>"
+"</body></html>";
+
+// ---------- 辅助函数 ----------
 static void generate_password(void)
 {
     if (s_password_generated) return;
@@ -156,6 +194,7 @@ static void restart_timer_callback(void *arg)
     esp_restart();
 }
 
+// ---------- 处理 /settings ----------
 static void handle_settings(int sock, const char *uri)
 {
     saved_wifi_config_t sta_cfg;
@@ -201,6 +240,27 @@ static void handle_settings(int sock, const char *uri)
     send_response(sock, "200 OK", "text/html", body);
 }
 
+// ---------- 处理 /reconnect ----------
+static void handle_reconnect(int sock)
+{
+    // 检查是否已登录
+    if (!s_logged_in) {
+        send_redirect(sock, "/");
+        return;
+    }
+
+    ESP_LOGI(TAG, "用户触发WiFi重连");
+    esp_err_t ret = wifi_manager_connect_saved();  // 调用重连函数
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "重连命令已发送");
+    } else {
+        ESP_LOGW(TAG, "重连失败: 可能没有保存的WiFi配置");
+    }
+    // 返回一个简单页面，3秒后跳回主页
+    send_response(sock, "200 OK", "text/html", RECONNECT_RESULT_PAGE);
+}
+
+// ---------- HTTP 服务器主循环 ----------
 static void http_server_thread(void *arg)
 {
     int server_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -254,13 +314,39 @@ static void http_server_thread(void *arg)
             continue;
         }
 
+        // ---------- 路由 ----------
         if (strcmp(method, "GET") == 0 && strncmp(uri, "/settings", 9) == 0) {
             handle_settings(client_sock, uri);
             close(client_sock);
             continue;
         }
 
+        if (strcmp(method, "GET") == 0 && strncmp(uri, "/reconnect", 10) == 0) {
+            handle_reconnect(client_sock);
+            close(client_sock);
+            continue;
+        }
+
         if (strcmp(method, "GET") == 0 && (strncmp(uri, "/", 1) == 0 || strncmp(uri, "/?", 2) == 0)) {
+            // ===== 关键修改：优先检查登录状态 =====
+            if (s_logged_in) {
+                // 已登录，直接显示主页
+                saved_wifi_config_t sta_cfg;
+                esp_err_t ret = nvs_load_wifi_config(&sta_cfg);
+                int is_first_time = (ret != ESP_OK || !sta_cfg.is_configured);
+                if (is_first_time) {
+                    send_redirect(client_sock, "/settings");
+                } else {
+                    const char *dev_id = device_id_get();
+                    char home_page[4096];
+                    snprintf(home_page, sizeof(home_page), HOME_PAGE_TEMPLATE, dev_id ? dev_id : "未知");
+                    send_response(client_sock, "200 OK", "text/html", home_page);
+                }
+                close(client_sock);
+                continue;
+            }
+
+            // 未登录，检查密码
             int pwd_correct = 0;
             int has_pwd_error = 0;
             char *pwd_pos = strstr(uri, "?pwd=");
@@ -286,7 +372,9 @@ static void http_server_thread(void *arg)
                 continue;
             }
 
+            // 密码正确，设置登录标志
             s_logged_in = true;
+
             saved_wifi_config_t sta_cfg;
             esp_err_t ret = nvs_load_wifi_config(&sta_cfg);
             int is_first_time = (ret != ESP_OK || !sta_cfg.is_configured);
@@ -310,6 +398,7 @@ static void http_server_thread(void *arg)
     vTaskDelete(NULL);
 }
 
+// ---------- 对外初始化函数 ----------
 esp_err_t web_server_init(void)
 {
     if (s_server_started) {
@@ -318,7 +407,7 @@ esp_err_t web_server_init(void)
 
     generate_password();
 
-    xTaskCreate(http_server_thread, "http_server", 16384, NULL, 5, NULL);
+    xTaskCreate(http_server_thread, "http_server", 24576, NULL, 5, NULL);
     s_server_started = 1;
 
     ESP_LOGI(TAG, "✅ Web服务器已启动，请访问 http://192.168.4.1 并输入密码");
