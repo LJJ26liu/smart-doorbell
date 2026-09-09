@@ -91,13 +91,13 @@ npm install
 
 设备端上传图片。
 
-**请求头**
+- **请求头**
 
 | 头字段	| 说明 |
 |-------|-----|
 | Content-Type	| application/json |
 
-**请求体**
+- **请求体**
 
 ```json
 {
@@ -107,7 +107,7 @@ npm install
 }
 ```
 
-**响应（成功）**
+- **响应（成功）**
 
 ```json
 {
@@ -125,7 +125,7 @@ npm install
 
 用户注册。
 
-**请求体**
+- **请求体**
 
 ```json
 {
@@ -135,7 +135,7 @@ npm install
 }
 ```
 
-**响应（成功）**
+- **响应（成功）**
 
 ```json
 {
@@ -148,7 +148,7 @@ npm install
 
 用户登录。
 
-**请求体**
+- **请求体**
 
 ```json
 {
@@ -157,7 +157,7 @@ npm install
 }
 ```
 
-**响应（成功）**
+- **响应（成功）**
 
 ```json
 {
@@ -173,13 +173,13 @@ npm install
 
 获取照片列表。
 
-**请求头**
+- **请求头**
 
 | 头字段	| 说明 |
 |-------|------|
 | X-User-Email	| 用户邮箱（用于查询绑定的设备 ID） |
 
-**响应（成功）**
+- **响应（成功）**
 
 ```json
 [
@@ -205,11 +205,11 @@ npm install
 
 ## 🔧 关键修复记录
 
-###索引更新 ENAMETOOLONG 错误
+### 索引更新 ENAMETOOLONG 错误
 
-**问题**：使用 ossClient.put(indexKey, JSON.stringify(photos)) 时，OSS SDK 将字符串误判为本地文件路径，导致 fs.stat 抛出 ENAMETOOLONG。
+- **问题**：使用 ossClient.put(indexKey, JSON.stringify(photos)) 时，OSS SDK 将字符串误判为本地文件路径，导致 fs.stat 抛出 ENAMETOOLONG。
 
-**修复**：
+- **修复**：
 
 ```javascript
 // ❌ 错误写法
@@ -221,7 +221,7 @@ await ossClient.put(indexKey, Buffer.from(JSON.stringify(photos)), {
 });
 ```
 
-**原因**：OSS SDK 的 put 方法第二个参数为字符串时会识别为本地文件路径，传入 Buffer 时识别为文件内容。
+- **原因**：OSS SDK 的 put 方法第二个参数为字符串时会识别为本地文件路径，传入 Buffer 时识别为文件内容。
 
 ## 📄 License
 Copyright (c) 2026 林佳佳
