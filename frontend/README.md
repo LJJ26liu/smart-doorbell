@@ -93,9 +93,14 @@ const API_BASE = 'https://doorbell-api-jclvfiemao.cn-shenzhen.fcapp.run';
 
 ## 📱 界面预览
 
-| 登录页 | 照片墙 | 大图预览 |
-|--------|--------|----------|
-| <img width="2879" height="1612" alt="网页端-登陆界面" src="https://github.com/user-attachments/assets/e913b0bb-fcce-4182-bec0-dc5aa408deed" />|<img width="2879" height="1613" alt="网页端-照片列表1" src="https://github.com/user-attachments/assets/64b34ede-1ec9-4b28-81a2-0e16640b653d" />|<img width="2879" height="1606" alt="网页端-多人识别" src="https://github.com/user-attachments/assets/efcfecb2-98a4-4b0b-804c-951173544ff2" />|
+| 登录页 |
+| <img width="2879" height="1612" alt="网页端-登陆界面" src="https://github.com/user-attachments/assets/e913b0bb-fcce-4182-bec0-dc5aa408deed" />|
+| 注册页 |
+|<img width="2879" height="1614" alt="网页端-注册页面" src="https://github.com/user-attachments/assets/f679a537-66bd-4efa-ace3-fbf393958eb7" />|
+| 照片列表 |
+|<img width="2879" height="1613" alt="网页端-照片列表1" src="https://github.com/user-attachments/assets/64b34ede-1ec9-4b28-81a2-0e16640b653d" />|
+| 大图预览 |
+|<img width="2879" height="1606" alt="网页端-多人识别" src="https://github.com/user-attachments/assets/efcfecb2-98a4-4b0b-804c-951173544ff2" />|
 
 > ⚠️ 以上为功能示意截图，实际效果以部署后为准。
 
