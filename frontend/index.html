@@ -302,7 +302,6 @@
             padding: 60px 0;
             font-size: 16px;
         }
-        /* ===== 模态框 ===== */
         .modal {
             display: none;
             position: fixed;
@@ -491,6 +490,7 @@
             btn.textContent = '登录中...';
     
             try {
+                // 使用路径 /login
                 const response = await fetch(`${API_BASE}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -546,6 +546,7 @@
             btn.textContent = '注册中...';
     
             try {
+                // 使用路径 /register
                 const response = await fetch(`${API_BASE}/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -639,12 +640,11 @@
             container.innerHTML = html;
         }
     
-        // ---- 加载照片数据（不传递 deviceId，后端自动获取） ----
+        // ---- 加载照片数据 ----
         async function loadPhotos() {
             const container = document.getElementById('photoContainer');
             container.innerHTML = '<div class="loading">⏳ 加载中...</div>';
     
-            // 确保 email 有效
             if (!currentEmail) {
                 const saved = sessionStorage.getItem('doorbell_user');
                 if (saved) {
@@ -664,6 +664,7 @@
             }
     
             try {
+                // 修改：使用路径 /get-photos
                 const response = await fetch(`${API_BASE}/get-photos`, {
                     method: 'GET',
                     headers: {
