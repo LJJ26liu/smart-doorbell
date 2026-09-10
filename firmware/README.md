@@ -27,11 +27,17 @@
 | **安全配网** | SoftAP 配网 + 6 位动态随机密码（esp_random） |
 | **资源保护** | 互斥锁保护共享照片缓冲区，避免任务间竞争 |
 
-## 🏗️ 系统架构
+## 🧠 任务调度设计
 
-<img width="2239" height="929" alt="系统架构图" src="https://github.com/user-attachments/assets/8a066af8-64e6-4be7-a90a-ac505d4b8e2f" />
+![任务调度图](../images/FreeRTOS任务调度图.png)
 
+> 说明：WiFi 协议栈运行在 Core 0，业务逻辑运行在 Core 1，通过互斥锁保护共享照片缓冲区。
 
+## 🔄 WiFi 配网状态机
+
+![WiFi 配网状态机](../images/WiFi配网状态机图.png)
+
+> 说明：AP 与 STA 双模式共存，断线自动重连，重试耗尽后仍可通过 AP 恢复配网。
 
 ## 📂 项目结构
 ```text
