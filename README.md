@@ -57,6 +57,8 @@ smart-doorbell/
 └── README.md           # 项目总览（本文档）
 ```
 
+---
+
 ## 🚀 快速开始
 
 ### 硬件端
@@ -95,6 +97,8 @@ idf.py -p /dev/ttyUSB0 flash
 
 > 详细接线说明请参考：hardware/README.md
 
+---
+
 ## 📷 展示
 
 |登录页|
@@ -107,11 +111,15 @@ idf.py -p /dev/ttyUSB0 flash
 |	硬件实物|
 |![硬件实物图](./images/智能可视化门铃实物图.jpg) |
 
+---
+
 ## 📄 版权声明
 
 Copyright (c) 2026 林佳佳
 
 本作品为毕业设计项目，仅供展示和学习参考。未经作者明确书面许可，不得复制、修改、分发或用于商业用途。
+
+---
 
 ## 🔗 各模块文档
 
@@ -121,6 +129,8 @@ Copyright (c) 2026 林佳佳
 |云函数后端	| [云函数后端](./cloud/README.md)	|FC 部署、API 接口文档、环境变量配置|
 |前端应用	| [前端应用](./frontend/README.md)	|网页端功能、部署指南|
 |硬件设计	| [硬件设计](./hardware/README.md)	|外设清单、GPIO 接线表|
+
+---
 
 ## 📧 联系方式
 
